@@ -1,15 +1,21 @@
 import dotenv from "dotenv";
-import express from "express";
+
 import connectDB from "./db/index.js";
+import app from "./app.js";
 
 dotenv.config();
 
-const app = express();
-
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Listing on http://localhost:${PORT}`);
-});
-
-connectDB();
+connectDB()
+  .then(() => {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, () => {
+      console.log(`Listing on http://localhost:${PORT}`);
+    });
+    app.on("error", () => {
+      console.log("Unable to connect to DB");
+      process.exit();
+    });
+  })
+  .catch((err) => {
+    console.log("Error: DB connection failed", err);
+  });
