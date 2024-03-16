@@ -1,9 +1,10 @@
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
-const registerUser = async (req, res) => {
+const registerUser = asyncHandler(async (req, res) => {
   //create user object
   //remove password and refresh token fields
   //check for user creation
@@ -11,7 +12,7 @@ const registerUser = async (req, res) => {
 
   //get user details from frontend
   const { username, email, fullName, password } = req.body;
-  console.log("email--->", email);
+  console.log("email--->", req.body);
 
   //validate user
   if (
@@ -21,13 +22,18 @@ const registerUser = async (req, res) => {
   ) {
     throw new ApiError(400, "All fields are required");
   }
+  console.log("User Validated");
 
   //check if user already exists : username and email
-  const existedUser = await User.findOne({ $or: [{ email }, { username }] });
+  const existedUser = await User.findOne({ email }); //User.findOne({ $or: [{ email }, { username }] });
+
+  console.log("existedUser--->", existedUser);
 
   if (existedUser) {
     throw new ApiError(409, "User with email or username already exists");
   }
+
+  console.log("User does not exists");
 
   //check for images and check for avatar
   console.log(req.files);
@@ -38,8 +44,11 @@ const registerUser = async (req, res) => {
     throw new ApiError(400, "Avatar file is required");
   }
 
+  console.log("avatarLocalPath--->", avatarLocalPath);
+
   //upload image to cloudinary, avatar
   const avatar = await uploadOnCloudinary(avatarLocalPath);
+  console.log("avatar--->", avatar);
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
   if (!avatar) {
     throw new ApiError(400, "Avatar not found");
@@ -65,6 +74,6 @@ const registerUser = async (req, res) => {
   return res
     .status(201)
     .json(new ApiResponse(200, userCreated, "User Registered Successfully"));
-};
+});
 
 export { registerUser };
